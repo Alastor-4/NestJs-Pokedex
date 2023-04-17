@@ -9,14 +9,20 @@ import { isValidObjectId, Model } from 'mongoose';
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { Pokemon } from './entities/pokemon.entity';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PokemonService {
+  private defaultLimit: number;
   constructor(
     //Inyectar modelos en el servicio
     @InjectModel(Pokemon.name)
     private readonly pokemonModel: Model<Pokemon>,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    this.defaultLimit = configService.get('defaultLimit');
+  }
 
   async create(createPokemonDto: CreatePokemonDto) {
     createPokemonDto.name = createPokemonDto.name.toLowerCase();
@@ -28,15 +34,20 @@ export class PokemonService {
     }
   }
 
-  async findAll() {
-    return await this.pokemonModel.find();
+  async findAll({ limit = this.defaultLimit, offset = 0 }: PaginationDto) {
+    return await this.pokemonModel
+      .find()
+      .limit(limit)
+      .skip(offset)
+      .select('-__v') //le quita la columna que quieras
+      .sort({ no: 1 }); //Ordena la columna no de manera ascendente
   }
 
   async findOne(term: string): Promise<Pokemon> {
     let pokemon: Pokemon;
     //No
     if (!isNaN(+term)) {
-      pokemon = await this.pokemonModel.findOne({ no: term });
+      pokemon = await this.pokemonModel.findOne({ no: term }).select('-__v');
     }
     //MongoID
     if (!pokemon && isValidObjectId(term)) {

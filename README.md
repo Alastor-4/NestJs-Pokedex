@@ -18,7 +18,10 @@
    ```
    docker-compose up -d
    ```
-
+  5. Llenar la base de datos con la semilla
+   ```
+   http://localhost:3000/api/v2/seed
+   ```
    ## Stack Usado
    * MongoDB
    * NestJS
